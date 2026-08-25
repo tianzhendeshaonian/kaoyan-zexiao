@@ -1,0 +1,6 @@
+# dockerignore style
+__pycache__/
+*.pyc
+.venv/
+.env
+alembic/versions/*_auto_*.py

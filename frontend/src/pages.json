@@ -1,0 +1,117 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "考研择校",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/school/list",
+      "style": {
+        "navigationBarTitleText": "院校检索",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/school/detail",
+      "style": {
+        "navigationBarTitleText": "院校详情"
+      }
+    },
+    {
+      "path": "pages/major/list",
+      "style": {
+        "navigationBarTitleText": "专业检索"
+      }
+    },
+    {
+      "path": "pages/score/lines",
+      "style": {
+        "navigationBarTitleText": "历年复试线"
+      }
+    },
+    {
+      "path": "pages/admission/stats",
+      "style": {
+        "navigationBarTitleText": "复录比"
+      }
+    },
+    {
+      "path": "pages/admission/catalogs",
+      "style": {
+        "navigationBarTitleText": "招生目录"
+      }
+    },
+    {
+      "path": "pages/report/edit",
+      "style": {
+        "navigationBarTitleText": "上岸分数填报"
+      }
+    },
+    {
+      "path": "pages/report/mine",
+      "style": {
+        "navigationBarTitleText": "我的填报"
+      }
+    },
+    {
+      "path": "pages/recommend/index",
+      "style": {
+        "navigationBarTitleText": "冲稳保推荐"
+      }
+    },
+    {
+      "path": "pages/vip/plans",
+      "style": {
+        "navigationBarTitleText": "VIP 会员"
+      }
+    },
+    {
+      "path": "pages/vip/orders",
+      "style": {
+        "navigationBarTitleText": "我的订单"
+      }
+    },
+    {
+      "path": "pages/user/index",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "考研择校",
+    "backgroundColor": "#f5f6fa",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#3a7afe",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/recommend/index",
+        "text": "冲稳保"
+      },
+      {
+        "pagePath": "pages/user/index",
+        "text": "我的"
+      }
+    ]
+  }
+}

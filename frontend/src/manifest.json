@@ -1,0 +1,31 @@
+{
+  "name": "考研择校",
+  "appid": "",
+  "description": "对标呱呱研选 - 院校专业检索/复试线/复录比/冲稳保",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "app-plus": {
+    "usingComponents": true,
+    "splashscreen": {
+      "alwaysShowBeforeRender": true,
+      "waiting": true,
+      "autoclose": true,
+      "delay": 0
+    }
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "postcss": true,
+      "minified": true,
+      "newFeature": true
+    },
+    "usingComponents": true,
+    "permission": {},
+    "requiredBackgroundModes": []
+  },
+  "vueVersion": "3"
+}
