@@ -27,5 +27,15 @@
     "permission": {},
     "requiredBackgroundModes": []
   },
+  "h5": {
+    "publicPath": "/kaoyan-zexiao/",
+    "router": {
+      "mode": "hash",
+      "base": "/kaoyan-zexiao/"
+    }
+  },
+  "uniStatistics": {
+    "enable": false
+  },
   "vueVersion": "3"
 }

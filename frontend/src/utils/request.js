@@ -16,10 +16,15 @@ export async function request(options) {
     rawUrl = false,
   } = options
 
-  // 本地预览 mock 拦截：命中则直接返回本地数据，不发起网络请求
+  // 本地预览 mock 拦截：USE_MOCK 时所有请求都走 mock，绝不发起真实网络请求
+  // （避免 H5 预览调 localhost 后端失败，触发 uni 框架"连接服务器超时"错误页）
   if (USE_MOCK) {
     const mockRes = mockMatch(url, method, data)
     if (mockRes !== undefined) return Promise.resolve(mockRes)
+    const err = new Error(`mock 未命中: ${method} ${url}`)
+    console.warn("[request] mock 未命中", url)
+    uni.showToast({ title: `mock 未命中 ${url}`, icon: "none", duration: 3000 })
+    return Promise.reject(err)
   }
 
   const fullUrl = rawUrl ? url : `${BASE_URL}${API_PREFIX}${url}`

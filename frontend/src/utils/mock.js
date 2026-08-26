@@ -7,9 +7,108 @@ const MOCK_USER = { id: 1, nickname: "研途同学" }
 // 1796169600 ≈ 2027-01-01
 const MOCK_VIP = { is_active: true, plan: "yearly", expire_at: 1796169600 }
 
-// 启动时预置登录态，使 ensureLogin / requireAuth 直接通过
+// === 全局拦截：uni.request / uploadFile / downloadFile 全部走 mock（连框架内部调用也拦住）===
+// 必须在业务调用前尽早执行，否则 uni-app 框架内部（DCloud has/hac 激活检查）可能先发真实请求
+let _patched = false
+function installGlobalMockInterceptor() {
+  if (!USE_MOCK) return
+  if (_patched) return
+  if (typeof uni === "undefined" || !uni || typeof uni.request !== "function") {
+    // uni 还没挂载，稍后重试
+    setTimeout(installGlobalMockInterceptor, 50)
+    return
+  }
+
+  const fakeSuccess = function (data) {
+    return { statusCode: 200, header: {}, data: data, errMsg: "request:ok" }
+  }
+
+  // 拦截 uni.request
+  var origRequest = uni.request
+  uni.request = function patchedRequest(options) {
+    var url = (options && options.url) || ""
+    var method = (options && options.method) || "GET"
+    var isDcloud = /dcloud\.net\.cn|dcloud\.io/.test(url)
+    var isLocalApi =
+      url.indexOf("localhost") >= 0 ||
+      url.indexOf("127.0.0.1") >= 0 ||
+      url.indexOf("/api/v1") >= 0
+
+    if (isDcloud) {
+      // DCloud 采集/激活域名 → 直接静默成功，杜绝任何真实网络调用
+      options && options.success && options.success(fakeSuccess({ code: 0, data: null }))
+      options && options.complete && options.complete(fakeSuccess(null))
+      return { offHeadersReceived: function () {}, abort: function () {} }
+    }
+
+    if (
+      isLocalApi ||
+      url.indexOf("/") === 0 ||
+      url.indexOf("http://") === 0 ||
+      url.indexOf("https://") === 0
+    ) {
+      var apiPath = url
+      try {
+        if (url.indexOf("http") === 0) {
+          var _u = new URL(url)
+          apiPath = _u.pathname.replace("/api/v1", "") + _u.search
+        }
+      } catch (_e) {}
+      var reqData = (options && options.data) || {}
+      var result = mockMatch(apiPath, method, reqData)
+      var payload
+      if (result !== undefined) {
+        payload = result
+      } else {
+        // 兜底：任何漏网请求都返回空，绝不发真实请求
+        console.warn("[mock global] 兜底返回空:", method, url)
+        payload = { code: 0, data: {}, items: [] }
+      }
+      options && options.success && options.success(fakeSuccess(payload))
+      options && options.complete && options.complete(fakeSuccess(null))
+      return { offHeadersReceived: function () {}, abort: function () {} }
+    }
+
+    // 其它未知情况交给原实现
+    return origRequest.apply(uni, arguments)
+  }
+
+  // 拦截 uploadFile / downloadFile
+  if (uni.uploadFile) {
+    var _origUp = uni.uploadFile
+    uni.uploadFile = function patchedUpload(options) {
+      if (!USE_MOCK) return _origUp.apply(uni, arguments)
+      options && options.success && options.success({
+        statusCode: 200,
+        data: JSON.stringify({ code: 0 }),
+        errMsg: "uploadFile:ok",
+      })
+      options && options.complete && options.complete()
+      return {}
+    }
+  }
+  if (uni.downloadFile) {
+    var _origDl = uni.downloadFile
+    uni.downloadFile = function patchedDownload(options) {
+      if (!USE_MOCK) return _origDl.apply(uni, arguments)
+      options && options.success && options.success({
+        statusCode: 200,
+        tempFilePath: "",
+        errMsg: "downloadFile:ok",
+      })
+      options && options.complete && options.complete()
+      return {}
+    }
+  }
+
+  _patched = true
+  console.log("[mock] 全局请求拦截已安装 (uni.request 已覆盖)")
+}
+
+// 启动时预置登录态，并确保全局拦截已安装
 export function initMockStorage() {
   if (!USE_MOCK) return
+  installGlobalMockInterceptor()
   if (!storage.get(STORAGE_KEYS.ACCESS_TOKEN)) {
     storage.set(STORAGE_KEYS.ACCESS_TOKEN, MOCK_TOKEN)
     storage.set(STORAGE_KEYS.REFRESH_TOKEN, "mock-refresh-token")
@@ -202,6 +301,8 @@ export function mockMatch(url, method = "GET", data = {}) {
   // 上岸填报
   if (url === API.REPORTS_MINE) return ok({ items: myReports })
   if (url === API.REPORTS && method === "POST") return ok({ id: Date.now() })
+  m = url.match(/^\/reports\/mine\/(\d+)$/)
+  if (m) return ok(myReports.find((x) => x.id === Number(m[1])) || myReports[0])
   // 冲稳保
   if (url === API.RECOMMEND && method === "POST") {
     return ok(genRecommend(Number(data.score), data.risk_pref))
@@ -214,6 +315,21 @@ export function mockMatch(url, method = "GET", data = {}) {
   if (url === API.VIP_ORDERS_MINE) return ok({ items: myOrders })
   m = url.match(/^\/vip\/orders\/([^/]+)\/simulate-pay$/)
   if (m) return ok({})
+  // VIP 订单详情
+  m = url.match(/^\/vip\/orders\/([^/]+)$/)
+  if (m) return ok({ order_no: m[1], plan: "年度 VIP", amount: 168, status: "paid", created_at: 1717200000, paid_at: 1717200600 })
+  // VIP 高级示例
+  if (url === API.VIP_ADVANCED) return ok({ tip: "VIP 高级接口数据(mock)" })
 
-  return undefined // 未命中，交给真实网络请求
+  // 兜底：未命中的请求也返回空数据，避免触发真实网络请求导致框架错误页
+  console.warn("[mock] 未命中，兜底返回空:", url, method)
+  return ok({ items: [] })
+}
+
+// 尽早安装全局拦截：文件被 import 的瞬间就开始（mockMatch 已定义、App.onLaunch 之前）
+try {
+  installGlobalMockInterceptor()
+} catch (_e) {
+  console.warn("[mock] 首轮安装失败，稍后重试", _e)
+  setTimeout(installGlobalMockInterceptor, 50)
 }
